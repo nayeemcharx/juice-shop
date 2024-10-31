@@ -9,7 +9,7 @@ pipeline {
         }
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/nayeemcharx/DVWA.git'
+                git 'https://github.com/nayeemcharx/juice-shop'
             }
         }
         stage('SonarQube Analysis') {
