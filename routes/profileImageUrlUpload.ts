@@ -13,6 +13,30 @@ import { UserModel } from '../models/user'
 import * as utils from '../lib/utils'
 import logger from '../lib/logger'
 
+function buildValidatedUrl(imageUrl: string): string {
+  try {
+    // Minimal path validation
+    if (imageUrl.includes('/../') || /\/%2e%2e\//i.test(imageUrl)) {
+      throw new Error('Invalid path')
+    }
+    
+    const url = new URL(imageUrl)
+    
+    // Protocol + host checks
+    const allowedDomains = ['imgur.com', 'github.com', 'githubusercontent.com', 'gravatar.com', 'example.com']
+    if (!allowedDomains.includes(url.hostname)) {
+      throw new Error('Invalid host')
+    }
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error('Invalid protocol')
+    }
+    
+    return url.href
+  } catch {
+    throw new Error('Invalid URL')
+  }
+}
+
 export function profileImageUrlUpload () {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (req.body.imageUrl !== undefined) {
@@ -21,7 +45,8 @@ export function profileImageUrlUpload () {
       const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
       if (loggedInUser) {
         try {
-          const response = await fetch(url)
+          const validatedUrl = buildValidatedUrl(url)
+          const response = await fetch(validatedUrl)
           if (!response.ok || !response.body) {
             throw new Error('url returned a non-OK status code or an empty body')
           }
